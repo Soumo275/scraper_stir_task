@@ -8,13 +8,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import requests
 from selenium.webdriver.chrome.options import Options
-from datetime import datetime
-from dotenv import load_dotenv
 import os
 import time
-import tempfile
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
+from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
@@ -40,18 +38,25 @@ proxy_url = f'https://api.scraperapi.com?api_key={SCRAPERAPI_KEY}&url=https://ht
 def get_driver_with_proxy():
     chrome_options = Options()
     chrome_options.add_argument(f'--proxy-server={proxy_url}')
-    chrome_options.add_argument('--headless')  # Ensures headless mode for cloud environments
-    chrome_options.add_argument('--disable-gpu')  # Necessary for headless mode
+    chrome_options.add_argument('--headless')  # Run in headless mode
     chrome_options.add_argument('--no-sandbox')  # Ensures sandboxing does not interfere
+    chrome_options.add_argument('--disable-gpu')  # Necessary for headless mode
     chrome_options.add_argument('--disable-dev-shm-usage')  # Resolves issues with resource limits in cloud
 
-    # Directly get the chromedriver path using webdriver_manager
+    # Set Chrome binary location explicitly
+    chrome_binary = "/usr/bin/google-chrome-stable"  # Location where Chrome is installed on Render
+    if os.path.exists(chrome_binary):
+        chrome_options.binary_location = chrome_binary
+    else:
+        print("Chrome binary not found at expected location. Proceeding without setting binary location.")
+
+    # Use webdriver_manager to install the correct version of ChromeDriver
     chromedriver_path = ChromeDriverManager().install()
 
-    # Create a Service object directly from the chromedriver path
+    # Create the Service object
     service = Service(chromedriver_path)
 
-    # Create the webdriver instance with specified options and service
+    # Initialize the WebDriver with the service and options
     driver = webdriver.Chrome(service=service, options=chrome_options)
     return driver
 
@@ -63,7 +68,7 @@ def index():
 def run_scraper():
     try:
         # Capture start time
-        start_time = datetime.now()
+        start_time = datetime.datetime.now()
         print(f"Script started at: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
         driver = get_driver_with_proxy()
         driver.maximize_window()
@@ -138,7 +143,7 @@ def run_scraper():
         print("IP address used by ScraperAPI:", ip_address)
 
         # Capture end time
-        end_time = datetime.now()
+        end_time = datetime.datetime.now()
         print(f"Script ended at: {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
         # Save data to MongoDB
@@ -180,4 +185,4 @@ def run_scraper():
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 if __name__ == "__main__":
-    app.run()
+    app.run(host='0.0.0.0', port=5000, debug=True)
