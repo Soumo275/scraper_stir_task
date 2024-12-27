@@ -23,9 +23,9 @@ RUN apt-get update && apt-get install -y \
 # Install a specific ChromeDriver version (replace with your Chromium's version compatibility)
 RUN CHROMEDRIVER_VERSION=114.0.5735.90 \
     && echo "Attempting to download ChromeDriver version $CHROMEDRIVER_VERSION..." \
-    && wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip \
+    && wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip || { echo 'Download failed!'; exit 1; } \
     && echo "Download complete. Unzipping ChromeDriver..." \
-    && unzip /tmp/chromedriver.zip -d /usr/bin/ \
+    && unzip /tmp/chromedriver.zip -d /usr/local/bin/ || { echo 'Unzip failed!'; exit 1; } \
     && rm /tmp/chromedriver.zip \
     && echo "ChromeDriver installation complete."
 
