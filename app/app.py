@@ -37,11 +37,13 @@ proxy_url = f'https://api.scraperapi.com?api_key={SCRAPERAPI_KEY}&url=https://ht
 # Configure Selenium with a ScraperAPI proxy
 def get_driver_with_proxy():
     chrome_options = Options()
-    # chrome_options.add_argument('--headless')  # Run in headless mode
+    chrome_options.add_argument('--headless')  # Run in headless mode
     chrome_options.add_argument('--no-sandbox')  # Ensures sandboxing does not interfere
     chrome_options.add_argument('--disable-gpu')  # Necessary for headless mode
     chrome_options.add_argument('--disable-dev-shm-usage')  # Resolves issues with resource limits in cloud
     chrome_options.add_argument(f'--proxy-server={proxy_url}')
+    chrome_options.add_argument('--start-maximized')  # Start Chrome in full-screen mode
+
 
     # Use the default Chromium path in the Docker image
     chrome_options.binary_location = "/usr/bin/chromium"

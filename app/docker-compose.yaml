@@ -1,0 +1,21 @@
+version: "3"
+services:
+  app:
+    build: .
+    command: gunicorn -w 4 -t 600 app:app
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb+srv://testing275:testing275@testing0.9s756.mongodb.net/
+      - SCRAPERAPI_KEY=9902a888ace10ff236001702938982b9
+      - TWITTER_USERNAME=dueltmp+4lm9o@gmail.com
+      - TWITTER_PASSWORD=Testing#275.
+      - TWITTER_NAME=testing_nice_
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
