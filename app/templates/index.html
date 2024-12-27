@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitter Trending Topics</title>
+    <style>
+        body { font-family: sans-serif; }
+        button { padding: 10px 20px; cursor: pointer; }
+        #results { margin-top: 20px; }
+        ul { list-style-type: none; padding: 0; }
+        li { margin-bottom: 5px; }
+        pre { background-color: #f4f4f4; padding: 10px; }
+        p { font-size: 16px; }
+    </style>
+</head>
+<body>
+    <h1>Twitter Trending Topics</h1>
+    <button id="run-script">Click here to run the script</button>
+    <div id="results"></div>
+
+    <script>
+        const resultsDiv = document.getElementById("results");
+        const runScriptButton = document.getElementById("run-script");
+
+        runScriptButton.addEventListener("click", async () => {
+            resultsDiv.innerHTML = "<p>Fetching data...</p>"; // Initial loading message
+            try {
+                const response = await fetch("/run-scraper");
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`HTTP error! status: ${response.status} - ${errorData.error || "Unknown error"}`);
+                }
+                const data = await response.json();
+
+                if (data.error) { // Handle errors from the backend
+                    resultsDiv.innerHTML = `<p style="color:red">Error: ${data.error}</p>`;
+                    return;
+                }
+
+                let resultsHTML = `
+                    <p>Unique ID: ${data.unique_id}</p>
+                    <p>These are the most happening topics as on ${data.date_time}</p>
+                    <ul>
+                        <li>${data.trend1}</li>
+                        <li>${data.trend2}</li>
+                        <li>${data.trend3}</li>
+                        <li>${data.trend4}</li>
+                    </ul>
+                    <p>The IP address used for this query was ${data.used_ip}.</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                    <button id="run-script-again">Click here to run the query again.</button>
+                `;
+                resultsDiv.innerHTML = resultsHTML;
+
+                const runScriptAgainButton = document.getElementById("run-script-again");
+                runScriptAgainButton.addEventListener("click", () => {
+                   runScriptButton.click(); // Re-run the scraper when the button is clicked again
+                });
+            } catch (error) {
+                resultsDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+                console.error("Error fetching data:", error);
+            }
+        });
+    </script>
+</body>
+</html>
