@@ -66,7 +66,8 @@ def run_scraper():
         # Capture start time
         start_time = datetime.datetime.now()
         print(f"Script started at: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
-        
+
+        # Initialize the WebDriver with the proxy configuration
         driver = get_driver_with_proxy()
         driver.maximize_window()
         driver.get("https://twitter.com/i/flow/login")
