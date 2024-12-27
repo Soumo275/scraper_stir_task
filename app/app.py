@@ -11,6 +11,7 @@ from selenium.webdriver.chrome.options import Options
 from datetime import datetime
 from dotenv import load_dotenv
 import os
+import time
 
 # Load environment variables from .env file
 load_dotenv()
@@ -35,7 +36,7 @@ proxy_url = f'https://api.scraperapi.com?api_key={SCRAPERAPI_KEY}&url=https://ht
 # Configure Selenium with a ScraperAPI proxy
 def get_driver_with_proxy():
     chrome_options = Options()
-    chrome_options.add_argument(f'--proxy-server={proxy_url}')  # ScraperAPI as the proxy server
+    chrome_options.add_argument(f'--proxy-server={proxy_url}')
     driver = webdriver.Chrome(options=chrome_options)
     return driver
 
@@ -65,11 +66,17 @@ def run_scraper():
         username_field.send_keys(TWITTER_USERNAME)
         username_field.send_keys(Keys.RETURN)
 
-        username_field = WebDriverWait(driver, 20).until(
-            EC.presence_of_element_located((By.NAME, "text"))
-        )
-        username_field.send_keys(TWITTER_NAME)
-        username_field.send_keys(Keys.RETURN)
+        time.sleep(3) 
+
+        # Check if the username field
+        try:
+            username_field = WebDriverWait(driver, 5).until(
+                EC.presence_of_element_located((By.NAME, "text"))
+            )
+            username_field.send_keys(TWITTER_NAME)
+            username_field.send_keys(Keys.RETURN)
+        except Exception as e:
+            print("No username")
 
         password_field = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.NAME, "password"))
@@ -162,4 +169,4 @@ def run_scraper():
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
