@@ -1,51 +1,42 @@
 # Use an official Python runtime as a parent image
 FROM python:3.9-slim
 
-# Set environment variables for non-interactive installations
-ENV DEBIAN_FRONTEND=noninteractive
+# Set environment variables to prevent Python from writing .pyc files and to prevent buffering
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-# Install system dependencies for Chrome and Xvfb
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the requirements file to the container
+COPY requirements.txt /app/
+
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     wget \
-    curl \
     unzip \
-    fonts-liberation \
-    libappindicator3-1 \
-    libasound2 \
-    libnss3 \
-    libx11-xcb1 \
-    libgbm1 \
-    xdg-utils \
-    libgtk-3-0 \
-    libxss1 \
-    libxtst6 \
-    xorg \
-    libgconf-2-4 \
-    xvfb \
-    && rm -rf /var/lib/apt/lists/*
+    curl \
+    chromium \
+    chromium-driver \
+    && apt-get clean
 
-# Install Google Chrome stable
-RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
-    dpkg -i google-chrome-stable_current_amd64.deb && \
-    apt-get install -f && \
-    rm google-chrome-stable_current_amd64.deb
-
-# Install ChromeDriver
-RUN npm install -g chromedriver
-
-# Set environment variable for headless Chrome
-ENV DISPLAY=:99
+# Install a specific ChromeDriver version (replace with your Chromium's version compatibility)
+RUN CHROMEDRIVER_VERSION=114.0.5735.90 \
+    && echo "Attempting to download ChromeDriver version $CHROMEDRIVER_VERSION..." \
+    && wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip || { echo 'Download failed!'; exit 1; } \
+    && echo "Download complete. Unzipping ChromeDriver..." \
+    && unzip /tmp/chromedriver.zip -d /usr/local/bin/ || { echo 'Unzip failed!'; exit 1; } \
+    && rm /tmp/chromedriver.zip \
+    && echo "ChromeDriver installation complete."
 
 # Install Python dependencies
-COPY requirements.txt /app/
-WORKDIR /app
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Copy the rest of the application code into the container
-COPY . /app
+# Copy the current directory contents into the container at /app
+COPY . /app/
 
-# Expose the application on port 5000
+# Expose the port Flask will run on
 EXPOSE 5000
 
-# Set the default command to run the Flask app
-CMD ["python", "app.py"]
+# Command to run the application
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
