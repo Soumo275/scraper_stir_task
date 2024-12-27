@@ -1,5 +1,5 @@
-# Use an official Python runtime as a parent image
-FROM python:3.9-slim
+# Use a smaller base image for Python runtime
+FROM python:3.9-alpine
 
 # Set environment variables to prevent Python from writing .pyc files and to prevent buffering
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -8,35 +8,26 @@ ENV PYTHONUNBUFFERED=1
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy the requirements file to the container
-COPY requirements.txt /app/
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    wget \
-    unzip \
-    curl \
+# Install required system dependencies in a minimal way
+RUN apk update && apk add --no-cache \
     chromium \
-    chromium-driver \
-    && apt-get clean
-
-# Install a specific ChromeDriver version (replace with your Chromium's version compatibility)
-RUN CHROMEDRIVER_VERSION=114.0.5735.90 \
-    && echo "Attempting to download ChromeDriver version $CHROMEDRIVER_VERSION..." \
-    && wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip || { echo 'Download failed!'; exit 1; } \
-    && echo "Download complete. Unzipping ChromeDriver..." \
-    && unzip /tmp/chromedriver.zip -d /usr/local/bin/ || { echo 'Unzip failed!'; exit 1; } \
-    && rm /tmp/chromedriver.zip \
-    && echo "ChromeDriver installation complete."
+    chromium-chromedriver \
+    curl \
+    bash \
+    && rm -rf /var/cache/apk/*
 
 # Install Python dependencies
+COPY requirements.txt /app/
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
 # Copy the current directory contents into the container at /app
 COPY . /app/
 
+# Set environment variable for Chromium path to avoid any issues with path detection
+ENV CHROME_BIN=/usr/bin/chromium
+
 # Expose the port Flask will run on
 EXPOSE 5000
 
-# Command to run the application
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
+# Command to run the application with Gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--timeout", "300", "app:app"]

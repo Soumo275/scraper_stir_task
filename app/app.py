@@ -42,8 +42,8 @@ def get_driver_with_proxy():
     chrome_options.add_argument('--disable-gpu')  # Necessary for headless mode
     chrome_options.add_argument('--disable-dev-shm-usage')  # Resolves issues with resource limits in cloud
     chrome_options.add_argument(f'--proxy-server={proxy_url}')
-    chrome_options.add_argument('--start-maximized')  # Start Chrome in full-screen mode
-
+    chrome_options.add_argument('--disable-extensions')  # Disable extensions to save memory
+    chrome_options.add_argument('--disable-software-rasterizer')  # Disable software rasterizer
 
     # Use the default Chromium path in the Docker image
     chrome_options.binary_location = "/usr/bin/chromium"
@@ -71,7 +71,6 @@ def run_scraper():
 
         # Initialize the WebDriver with the proxy configuration
         driver = get_driver_with_proxy()
-        driver.maximize_window()
         driver.get("https://twitter.com/i/flow/login")
 
         # Log in to Twitter
@@ -81,7 +80,7 @@ def run_scraper():
         username_field.send_keys(TWITTER_USERNAME)
         username_field.send_keys(Keys.RETURN)
 
-        time.sleep(3)  # Add a small delay to avoid race conditions
+        time.sleep(2)  # Reduced sleep time to save memory
 
         # Handle username field if it asks for additional input
         try:
