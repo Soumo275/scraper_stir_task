@@ -11,14 +11,19 @@ WORKDIR /app
 # Copy the requirements file to the container
 COPY requirements.txt /app/
 
-# Install required packages
+# Install required system packages and fetch matching ChromeDriver
 RUN apt-get update && apt-get install -y \
     wget \
     unzip \
     curl \
     chromium \
     chromium-driver \
-    && apt-get clean
+    && apt-get clean \
+    && CHROME_VERSION=$(chromium --version | awk '{print $2}') \
+    && DRIVER_VERSION=$(curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION) \
+    && wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/$DRIVER_VERSION/chromedriver_linux64.zip \
+    && unzip /tmp/chromedriver.zip -d /usr/bin/ \
+    && rm /tmp/chromedriver.zip
 
 # Install Python dependencies
 RUN pip install --upgrade pip && pip install -r requirements.txt
