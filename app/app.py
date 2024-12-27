@@ -66,6 +66,7 @@ def run_scraper():
         # Capture start time
         start_time = datetime.datetime.now()
         print(f"Script started at: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+        
         driver = get_driver_with_proxy()
         driver.maximize_window()
         driver.get("https://twitter.com/i/flow/login")
@@ -134,9 +135,20 @@ def run_scraper():
         print(f"Trend 4: {trend4}")
 
         # Retrieve IP address used via ScraperAPI
-        response = requests.get(proxy_url)
-        ip_address = response.json()['origin'] if response.status_code == 200 else "Unknown"
-        print("IP address used by ScraperAPI:", ip_address)
+        try:
+            response = requests.get(proxy_url)
+            # Log the raw response content for debugging
+            print("ScraperAPI Response Content:", response.text)
+
+            if response.status_code == 200:
+                ip_address = response.json().get('origin', 'Unknown')
+            else:
+                ip_address = "Error: Failed to retrieve IP"
+
+            print("IP address used by ScraperAPI:", ip_address)
+        except Exception as e:
+            print(f"Error occurred while fetching IP address from ScraperAPI: {str(e)}")
+            ip_address = "Error: Failed to retrieve IP"
 
         # Capture end time
         end_time = datetime.datetime.now()
