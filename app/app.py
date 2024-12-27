@@ -37,7 +37,7 @@ proxy_url = f'https://api.scraperapi.com?api_key={SCRAPERAPI_KEY}&url=https://ht
 # Configure Selenium with a ScraperAPI proxy
 def get_driver_with_proxy():
     chrome_options = Options()
-    chrome_options.add_argument('--headless')  # Run in headless mode
+    # chrome_options.add_argument('--headless')  # Run in headless mode
     chrome_options.add_argument('--no-sandbox')  # Ensures sandboxing does not interfere
     chrome_options.add_argument('--disable-gpu')  # Necessary for headless mode
     chrome_options.add_argument('--disable-dev-shm-usage')  # Resolves issues with resource limits in cloud
@@ -73,7 +73,7 @@ def run_scraper():
         driver.get("https://twitter.com/i/flow/login")
 
         # Log in to Twitter
-        username_field = WebDriverWait(driver, 20).until(
+        username_field = WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.NAME, "text"))
         )
         username_field.send_keys(TWITTER_USERNAME)
@@ -83,7 +83,7 @@ def run_scraper():
 
         # Handle username field if it asks for additional input
         try:
-            username_field = WebDriverWait(driver, 5).until(
+            username_field = WebDriverWait(driver, 30).until(
                 EC.presence_of_element_located((By.NAME, "text"))
             )
             username_field.send_keys(TWITTER_NAME)
@@ -92,7 +92,7 @@ def run_scraper():
             print("No username input required")
 
         # Enter the password
-        password_field = WebDriverWait(driver, 20).until(
+        password_field = WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.NAME, "password"))
         )
         password_field.send_keys(TWITTER_PASSWORD)
