@@ -80,17 +80,21 @@ def run_scraper():
         username_field.send_keys(TWITTER_USERNAME)
         username_field.send_keys(Keys.RETURN)
 
-        time.sleep(2)  # Reduced sleep time to save memory
+        #############
 
-        # Handle username field if it asks for additional input
-        try:
-            username_field = WebDriverWait(driver, 30).until(
-                EC.presence_of_element_located((By.NAME, "text"))
-            )
-            username_field.send_keys(TWITTER_NAME)
-            username_field.send_keys(Keys.RETURN)
-        except Exception as e:
-            print("No username input required")
+        # time.sleep(2)  # Reduced sleep time to save memory
+
+        # # Handle username field if it asks for additional input
+        # try:
+        #     username_field = WebDriverWait(driver, 30).until(
+        #         EC.presence_of_element_located((By.NAME, "text"))
+        #     )
+        #     username_field.send_keys(TWITTER_NAME)
+        #     username_field.send_keys(Keys.RETURN)
+        # except Exception as e:
+        #     print("No username input required")
+
+        ##############
 
         # Enter the password
         password_field = WebDriverWait(driver, 30).until(
