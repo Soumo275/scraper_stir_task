@@ -187,6 +187,8 @@ def run_scraper():
             "ip_address": latest_entry.get("ip_address", "N/A"),
         }
 
+        print(f"Latest MongoDB Entry: {response_data}")
+
         return jsonify(response_data)
 
     except Exception as e:
