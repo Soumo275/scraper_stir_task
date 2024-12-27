@@ -45,13 +45,12 @@ def get_driver_with_proxy():
     chrome_options.add_argument('--no-sandbox')  # Ensures sandboxing does not interfere
     chrome_options.add_argument('--disable-dev-shm-usage')  # Resolves issues with resource limits in cloud
 
-    # Temporary directory to store chromedriver
-    temp_dir = tempfile.mkdtemp()
-    chromedriver_path = ChromeDriverManager().install()  # Get chromedriver using webdriver-manager
-    temp_chromedriver_path = os.path.join(temp_dir, 'chromedriver')
-    os.rename(chromedriver_path, temp_chromedriver_path)
-    service = Service(temp_chromedriver_path)
-    
+    # Directly get the chromedriver path using webdriver_manager
+    chromedriver_path = ChromeDriverManager().install()
+
+    # Create a Service object directly from the chromedriver path
+    service = Service(chromedriver_path)
+
     # Create the webdriver instance with specified options and service
     driver = webdriver.Chrome(service=service, options=chrome_options)
     return driver
