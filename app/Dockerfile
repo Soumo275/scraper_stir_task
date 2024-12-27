@@ -22,9 +22,12 @@ RUN apt-get update && apt-get install -y \
 
 # Install a specific ChromeDriver version (replace with your Chromium's version compatibility)
 RUN CHROMEDRIVER_VERSION=114.0.5735.90 \
+    && echo "Attempting to download ChromeDriver version $CHROMEDRIVER_VERSION..." \
     && wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip \
+    && echo "Download complete. Unzipping ChromeDriver..." \
     && unzip /tmp/chromedriver.zip -d /usr/bin/ \
-    && rm /tmp/chromedriver.zip
+    && rm /tmp/chromedriver.zip \
+    && echo "ChromeDriver installation complete."
 
 # Install Python dependencies
 RUN pip install --upgrade pip && pip install -r requirements.txt
