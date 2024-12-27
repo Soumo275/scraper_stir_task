@@ -12,6 +12,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 import os
 import time
+from webdriver_manager.chrome import ChromeDriverManager
 
 # Load environment variables from .env file
 load_dotenv()
@@ -37,7 +38,7 @@ proxy_url = f'https://api.scraperapi.com?api_key={SCRAPERAPI_KEY}&url=https://ht
 def get_driver_with_proxy():
     chrome_options = Options()
     chrome_options.add_argument(f'--proxy-server={proxy_url}')
-    driver = webdriver.Chrome(options=chrome_options)
+    driver = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
     return driver
 
 @app.route("/")
@@ -52,11 +53,9 @@ def run_scraper():
         # Capture start time
         start_time = datetime.now()
         print(f"Script started at: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
-
         driver = get_driver_with_proxy()
         driver.maximize_window()
         driver.get("https://twitter.com/i/flow/login")
-
 
 
         # Log in
@@ -169,4 +168,4 @@ def run_scraper():
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
