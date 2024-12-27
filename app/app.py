@@ -13,6 +13,8 @@ from dotenv import load_dotenv
 import os
 import time
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -38,7 +40,11 @@ proxy_url = f'https://api.scraperapi.com?api_key={SCRAPERAPI_KEY}&url=https://ht
 def get_driver_with_proxy():
     chrome_options = Options()
     chrome_options.add_argument(f'--proxy-server={proxy_url}')
-    driver = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
+    # Create Service object
+    service = Service(ChromeDriverManager().install())
+    # Pass service and options to the ChromeDriver
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+    
     return driver
 
 @app.route("/")
