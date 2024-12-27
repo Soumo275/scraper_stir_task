@@ -47,7 +47,7 @@ def index():
 def run_scraper():
     try:
 
-        
+
         # Capture start time
         start_time = datetime.now()
         print(f"Script started at: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
@@ -162,4 +162,4 @@ def run_scraper():
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
