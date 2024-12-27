@@ -39,15 +39,15 @@
                 }
 
                 let resultsHTML = `
-                    <p>Unique ID: ${data.unique_id}</p>
-                    <p>These are the most happening topics as on ${data.date_time}</p>
+                    <p><strong>Unique ID:</strong> ${data.unique_id}</p>
+                    <p><strong>Trending Topics as of:</strong> ${data.start_time}</p>
                     <ul>
-                        <li>${data.trend1}</li>
-                        <li>${data.trend2}</li>
-                        <li>${data.trend3}</li>
-                        <li>${data.trend4}</li>
+                        <li><strong>Trend 1:</strong> ${data.trend1}</li>
+                        <li><strong>Trend 2:</strong> ${data.trend2}</li>
+                        <li><strong>Trend 3:</strong> ${data.trend3}</li>
+                        <li><strong>Trend 4:</strong> ${data.trend4}</li>
                     </ul>
-                    <p>The IP address used for this query was ${data.used_ip}.</p>
+                    <p><strong>IP address used for this query:</strong> ${data.ip_address}</p>
                     <pre>${JSON.stringify(data, null, 2)}</pre>
                     <button id="run-script-again">Click here to run the query again.</button>
                 `;

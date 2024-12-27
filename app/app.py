@@ -105,37 +105,25 @@ def run_scraper():
         print("Login successful!")
 
         # Extract trends
-        trend1 = WebDriverWait(driver, 20).until(
-            EC.presence_of_element_located(
-                (By.XPATH, '/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[3]/div/div/div/div[2]')
-            )
-        ).text
+        trends = []
+        trend_xpath = [
+            '/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[3]/div/div/div/div[2]',
+            '/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[4]/div/div/div/div[2]',
+            '/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[5]/div/div/div/div[2]',
+            '/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[6]/div/div/div/div[2]'
+        ]
 
-        trend2 = WebDriverWait(driver, 20).until(
-            EC.presence_of_element_located(
-                (By.XPATH, '/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[4]/div/div/div/div[2]')
-            )
-        ).text
-
-        trend3 = WebDriverWait(driver, 20).until(
-            EC.presence_of_element_located(
-                (By.XPATH, '/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[5]/div/div/div/div[2]')
-            )
-        ).text
-
-        trend4 = WebDriverWait(driver, 20).until(
-            EC.presence_of_element_located(
-                (By.XPATH, '/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[6]/div/div/div/div[2]')
-            )
-        ).text
+        for xpath in trend_xpath:
+            trend = WebDriverWait(driver, 20).until(
+                EC.presence_of_element_located((By.XPATH, xpath))
+            ).text
+            trends.append(trend)
 
         # Log the trends
-        print(f"Trend 1: {trend1}")
-        print(f"Trend 2: {trend2}")
-        print(f"Trend 3: {trend3}")
-        print(f"Trend 4: {trend4}")
+        print(f"Trends: {trends}")
 
         # Retrieve IP address used via ScraperAPI
+        ip_address = "Unknown"
         try:
             response = requests.get(proxy_url)
             # Log the raw response content for debugging
@@ -145,11 +133,10 @@ def run_scraper():
                 ip_address = response.json().get('origin', 'Unknown')
             else:
                 ip_address = "Error: Failed to retrieve IP"
-
-            print("IP address used by ScraperAPI:", ip_address)
         except Exception as e:
             print(f"Error occurred while fetching IP address from ScraperAPI: {str(e)}")
-            ip_address = "Error: Failed to retrieve IP"
+
+        print("IP address used by ScraperAPI:", ip_address)
 
         # Capture end time
         end_time = datetime.datetime.now()
@@ -157,10 +144,7 @@ def run_scraper():
 
         # Save data to MongoDB
         document = {
-            "trend1": trend1,
-            "trend2": trend2,
-            "trend3": trend3,
-            "trend4": trend4,
+            "trends": trends,
             "start_time": start_time.strftime('%Y-%m-%d %H:%M:%S'),
             "end_time": end_time.strftime('%Y-%m-%d %H:%M:%S'),
             "ip_address": ip_address
@@ -178,10 +162,7 @@ def run_scraper():
 
         response_data = {
             "unique_id": str(latest_entry.get("_id", "N/A")),
-            "trend1": latest_entry.get("trend1", "N/A"),
-            "trend2": latest_entry.get("trend2", "N/A"),
-            "trend3": latest_entry.get("trend3", "N/A"),
-            "trend4": latest_entry.get("trend4", "N/A"),
+            "trends": latest_entry.get("trends", "N/A"),
             "start_time": latest_entry.get("start_time", "N/A"),
             "end_time": latest_entry.get("end_time", "N/A"),
             "ip_address": latest_entry.get("ip_address", "N/A"),
