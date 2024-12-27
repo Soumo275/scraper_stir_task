@@ -42,7 +42,7 @@ def get_driver_with_proxy():
     chrome_options = Options()
     chrome_options.add_argument(f'--proxy-server={proxy_url}')
     temp_dir = tempfile.mkdtemp()
-    driver_path = ChromeDriverManager(path=temp_dir).install()
+    driver_path = ChromeDriverManager().install()
     service = Service(driver_path)
     driver = webdriver.Chrome(service=service, options=chrome_options)
     
