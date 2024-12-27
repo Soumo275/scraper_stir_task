@@ -1,48 +1,32 @@
-# Start from a slim Python image
+# Use an official Python runtime as a parent image
 FROM python:3.9-slim
 
-# Install dependencies for Google Chrome and other necessary libraries
+# Set environment variables to prevent Python from writing .pyc files and to prevent buffering
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the requirements file to the container
+COPY requirements.txt /app/
+
+# Install required packages
 RUN apt-get update && apt-get install -y \
     wget \
-    curl \
     unzip \
-    libx11-dev \
-    libxcomposite1 \
-    libxrandr2 \
-    libxdamage1 \
-    libxi6 \
-    libgconf-2-4 \
-    libnss3 \
-    libasound2 \
-    libgtk-3-0 \
-    libappindicator3-1 \
-    libgdk-pixbuf2.0-0 \
-    libnspr4 \
-    libxtst6 \
-    libdbus-1-3 \
-    xdg-utils \
-    libnss3-dev \
-    libxss1 \
-    && rm -rf /var/lib/apt/lists/*
+    curl \
+    chromium-driver \
+    && apt-get clean
 
-# Install Google Chrome
-RUN wget -q -O - https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb > google-chrome-stable_current_amd64.deb && \
-    dpkg -i google-chrome-stable_current_amd64.deb && \
-    apt-get update -y && apt-get install -f
+# Install Python dependencies
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Install dependencies listed in requirements.txt
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy the current directory contents into the container at /app
+COPY . /app/
 
-# Install additional packages for selenium and webdriver-manager
-RUN pip install --no-cache-dir selenium webdriver-manager
-
-# Set up the working directory
-COPY . .
-
-# Expose the port for Flask to run on (default is 5000)
+# Expose the port Flask will run on
 EXPOSE 5000
 
-# Set the command to run the app (using gunicorn in production)
+# Command to run the application
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
