@@ -11,17 +11,18 @@ WORKDIR /app
 # Copy the requirements file to the container
 COPY requirements.txt /app/
 
-# Install required system packages and fetch matching ChromeDriver
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     wget \
     unzip \
     curl \
     chromium \
     chromium-driver \
-    && apt-get clean \
-    && CHROME_VERSION=$(chromium --version | awk '{print $2}') \
-    && DRIVER_VERSION=$(curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION) \
-    && wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/$DRIVER_VERSION/chromedriver_linux64.zip \
+    && apt-get clean
+
+# Install a specific ChromeDriver version (replace with your Chromium's version compatibility)
+RUN CHROMEDRIVER_VERSION=114.0.5735.90 \
+    && wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip \
     && unzip /tmp/chromedriver.zip -d /usr/bin/ \
     && rm /tmp/chromedriver.zip
 

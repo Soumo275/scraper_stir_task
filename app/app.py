@@ -37,21 +37,17 @@ proxy_url = f'https://api.scraperapi.com?api_key={SCRAPERAPI_KEY}&url=https://ht
 # Configure Selenium with a ScraperAPI proxy
 def get_driver_with_proxy():
     chrome_options = Options()
-    chrome_options.add_argument(f'--proxy-server={proxy_url}')
     chrome_options.add_argument('--headless')  # Run in headless mode
     chrome_options.add_argument('--no-sandbox')  # Ensures sandboxing does not interfere
     chrome_options.add_argument('--disable-gpu')  # Necessary for headless mode
     chrome_options.add_argument('--disable-dev-shm-usage')  # Resolves issues with resource limits in cloud
+    chrome_options.add_argument(f'--proxy-server={proxy_url}')
 
-    # Set Chrome binary location explicitly
-    chrome_binary = "/usr/bin/google-chrome-stable"  # Location where Chrome is installed on Render
-    if os.path.exists(chrome_binary):
-        chrome_options.binary_location = chrome_binary
-    else:
-        print("Chrome binary not found at expected location. Proceeding without setting binary location.")
+    # Use the default Chromium path in the Docker image
+    chrome_options.binary_location = "/usr/bin/chromium"
 
     # Use webdriver_manager to install the correct version of ChromeDriver
-    chromedriver_path = ChromeDriverManager().install()
+    chromedriver_path = "/usr/bin/chromedriver"
 
     # Create the Service object
     service = Service(chromedriver_path)
@@ -62,7 +58,7 @@ def get_driver_with_proxy():
 
 @app.route("/")
 def index():
-    return render_template("index.html") 
+    return render_template("index.html")
 
 @app.route("/run-scraper", methods=["GET"])
 def run_scraper():
