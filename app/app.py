@@ -16,13 +16,11 @@ import tempfile
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
 
-
 # Load environment variables from .env file
 load_dotenv()
 
 app = Flask(__name__)
 
-# Load sensitive information from environment variables
 MONGO_URI = os.getenv("MONGO_URI")
 SCRAPERAPI_KEY = os.getenv("SCRAPERAPI_KEY")
 TWITTER_USERNAME = os.getenv("TWITTER_USERNAME")
@@ -41,6 +39,8 @@ proxy_url = f'https://api.scraperapi.com?api_key={SCRAPERAPI_KEY}&url=https://ht
 def get_driver_with_proxy():
     chrome_options = Options()
     chrome_options.add_argument(f'--proxy-server={proxy_url}')
+    chrome_options.add_argument('--headless')
+    chrome_options.add_argument('--disable-gpu')
     temp_dir = tempfile.mkdtemp()
     chromedriver_path = ChromeDriverManager().install()
     temp_chromedriver_path = os.path.join(temp_dir, 'chromedriver')
@@ -57,8 +57,6 @@ def index():
 @app.route("/run-scraper", methods=["GET"])
 def run_scraper():
     try:
-
-
         # Capture start time
         start_time = datetime.now()
         print(f"Script started at: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
@@ -67,16 +65,17 @@ def run_scraper():
         driver.get("https://twitter.com/i/flow/login")
 
 
-        # Log in
+
+        # Log in to Twitter
         username_field = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.NAME, "text"))
         )
         username_field.send_keys(TWITTER_USERNAME)
         username_field.send_keys(Keys.RETURN)
 
-        time.sleep(3) 
+        time.sleep(3)
 
-        # Check if the username field
+        # Handle username field if it asks for additional input
         try:
             username_field = WebDriverWait(driver, 5).until(
                 EC.presence_of_element_located((By.NAME, "text"))
@@ -84,18 +83,21 @@ def run_scraper():
             username_field.send_keys(TWITTER_NAME)
             username_field.send_keys(Keys.RETURN)
         except Exception as e:
-            print("No username")
+            print("No username input required")
 
+        # Enter the password
         password_field = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.NAME, "password"))
         )
         password_field.send_keys(TWITTER_PASSWORD)
         password_field.send_keys(Keys.RETURN)
 
+        # Wait for the home page to load
         WebDriverWait(driver, 20).until(
             EC.url_contains('home')
         )
         print("Login successful!")
+
 
 
 
@@ -124,6 +126,7 @@ def run_scraper():
             )
         ).text
 
+        # Log the trends
         print(f"Trend 1: {trend1}")
         print(f"Trend 2: {trend2}")
         print(f"Trend 3: {trend3}")
