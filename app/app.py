@@ -21,6 +21,7 @@ load_dotenv()
 
 app = Flask(__name__)
 
+# Load sensitive information from environment variables
 MONGO_URI = os.getenv("MONGO_URI")
 SCRAPERAPI_KEY = os.getenv("SCRAPERAPI_KEY")
 TWITTER_USERNAME = os.getenv("TWITTER_USERNAME")
@@ -39,15 +40,20 @@ proxy_url = f'https://api.scraperapi.com?api_key={SCRAPERAPI_KEY}&url=https://ht
 def get_driver_with_proxy():
     chrome_options = Options()
     chrome_options.add_argument(f'--proxy-server={proxy_url}')
-    chrome_options.add_argument('--headless')
-    chrome_options.add_argument('--disable-gpu')
+    chrome_options.add_argument('--headless')  # Ensures headless mode for cloud environments
+    chrome_options.add_argument('--disable-gpu')  # Necessary for headless mode
+    chrome_options.add_argument('--no-sandbox')  # Ensures sandboxing does not interfere
+    chrome_options.add_argument('--disable-dev-shm-usage')  # Resolves issues with resource limits in cloud
+
+    # Temporary directory to store chromedriver
     temp_dir = tempfile.mkdtemp()
-    chromedriver_path = ChromeDriverManager().install()
+    chromedriver_path = ChromeDriverManager().install()  # Get chromedriver using webdriver-manager
     temp_chromedriver_path = os.path.join(temp_dir, 'chromedriver')
     os.rename(chromedriver_path, temp_chromedriver_path)
     service = Service(temp_chromedriver_path)
-    driver = webdriver.Chrome(service=service, options=chrome_options)
     
+    # Create the webdriver instance with specified options and service
+    driver = webdriver.Chrome(service=service, options=chrome_options)
     return driver
 
 @app.route("/")
@@ -64,8 +70,6 @@ def run_scraper():
         driver.maximize_window()
         driver.get("https://twitter.com/i/flow/login")
 
-
-
         # Log in to Twitter
         username_field = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.NAME, "text"))
@@ -73,7 +77,7 @@ def run_scraper():
         username_field.send_keys(TWITTER_USERNAME)
         username_field.send_keys(Keys.RETURN)
 
-        time.sleep(3)
+        time.sleep(3)  # Add a small delay to avoid race conditions
 
         # Handle username field if it asks for additional input
         try:
@@ -97,9 +101,6 @@ def run_scraper():
             EC.url_contains('home')
         )
         print("Login successful!")
-
-
-
 
         # Extract trends
         trend1 = WebDriverWait(driver, 20).until(
