@@ -79,7 +79,7 @@ def run_scraper():
 
         # Extract trends
         trends = []
-        for i in range(1, 5):
+        for i in range(1, 6):
             trend = WebDriverWait(driver, 20).until(
                 EC.presence_of_element_located(
                     (By.XPATH, f'/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[{i + 2}]/div/div/div/div[2]')
@@ -104,6 +104,7 @@ def run_scraper():
             "trend2": trends[1],
             "trend3": trends[2],
             "trend4": trends[3],
+            "trend5": trends[4],
             "start_time": start_time.strftime('%Y-%m-%d %H:%M:%S'),
             "end_time": end_time.strftime('%Y-%m-%d %H:%M:%S'),
             "ip_address": ip_address
@@ -124,6 +125,7 @@ def run_scraper():
             "trend2": latest_entry.get("trend2", "N/A"),
             "trend3": latest_entry.get("trend3", "N/A"),
             "trend4": latest_entry.get("trend4", "N/A"),
+            "trend5": latest_entry.get("trend5", "N/A"),
             "start_time": latest_entry.get("start_time", "N/A"),
             "end_time": latest_entry.get("end_time", "N/A"),
             "ip_address": latest_entry.get("ip_address", "N/A"),
