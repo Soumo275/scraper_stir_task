@@ -60,6 +60,15 @@ def scrape_twitter():
             print("Entering password...")
             page.fill("input[name=\"password\"]", TWITTER_PASSWORD)
             page.press("input[name=\"password\"]", "Enter")
+
+            try:
+                page.fill("input[name=\"text\"]", TWITTER_USERNAME)
+                page.press("input[name=\"text\"]", "Enter")
+                time.sleep(2)
+                print("Additional email input handled.")
+            except Exception:
+                print("No additional email input required.")
+
             print("Login successful!")
 
             # Wait for the home page to load
