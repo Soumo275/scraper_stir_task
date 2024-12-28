@@ -74,19 +74,19 @@ def scrape_twitter():
             # Wait for the home page to load
             print("Waiting for home page to load...")
             try:
-                page.wait_for_selector('xpath=//a[contains(@href, "/home")]', timeout=120000)
+                max_wait_time = 120  # Total time to wait in seconds
+                polling_interval = 1  # Interval between checks in seconds
+                elapsed_time = 0
+
+                while '/home' not in page.url:
+                    if elapsed_time >= max_wait_time:
+                        raise TimeoutError("Timeout exceeded while waiting for the URL to contain '/home'.")
+                    time.sleep(polling_interval)
+                    elapsed_time += polling_interval
+
                 print("Home page loaded successfully!")
             except Exception as e:
-                print(f"Error during waiting for selector: {e}")
-                with open("debug_page.html", "w") as file:
-                    file.write(page.content())
-                raise
-
-            # Debug: Capture screenshot and HTML
-            page.screenshot(path="debug_screenshot.png")
-            html_content = page.content()
-            with open("debug_page.html", "w") as file:
-                file.write(html_content)
+                print(f"Error during waiting for URL to contain '/home': {e}")
 
             print("Extracting individual trends...")
             trends = {}
