@@ -14,11 +14,17 @@ RUN apk update && apk add --no-cache \
     chromium-chromedriver \
     curl \
     bash \
+    libc6-compat \
     && rm -rf /var/cache/apk/*
 
-# Install Python dependencies
+# Install Playwright dependencies and set up Playwright
+RUN pip install --upgrade pip && \
+    pip install playwright && \
+    playwright install --with-deps chromium
+
+# Copy the requirements file and install Python dependencies
 COPY requirements.txt /app/
-RUN pip install --upgrade pip && pip install -r requirements.txt
+RUN pip install -r requirements.txt
 
 # Copy the current directory contents into the container at /app
 COPY . /app/

@@ -1,18 +1,11 @@
 from flask import Flask, jsonify, render_template
 from pymongo import MongoClient
 import datetime
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-import requests
-from selenium.webdriver.chrome.options import Options
 import os
 import time
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.service import Service
 from dotenv import load_dotenv
+from playwright.sync_api import sync_playwright
+import requests
 
 # Load environment variables from .env file
 load_dotenv()
@@ -34,29 +27,57 @@ collection = db["trend_data"]
 # ScraperAPI configuration
 proxy_url = f'https://api.scraperapi.com?api_key={SCRAPERAPI_KEY}&url=https://httpbin.org/ip'
 
-# Configure Selenium with a ScraperAPI proxy
-def get_driver_with_proxy():
-    chrome_options = Options()
-    chrome_options.add_argument('--headless')  # Run in headless mode
-    chrome_options.add_argument('--no-sandbox')  # Ensures sandboxing does not interfere
-    chrome_options.add_argument('--disable-gpu')  # Necessary for headless mode
-    chrome_options.add_argument('--disable-dev-shm-usage')  # Resolves issues with resource limits in cloud
-    chrome_options.add_argument(f'--proxy-server={proxy_url}')
-    chrome_options.add_argument('--disable-extensions')  # Disable extensions to save memory
-    chrome_options.add_argument('--disable-software-rasterizer')  # Disable software rasterizer
+# Function to scrape Twitter trends using Playwright
+def scrape_twitter():
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context()
+        page = context.new_page()
 
-    # Use the default Chromium path in the Docker image
-    chrome_options.binary_location = "/usr/bin/chromium"
+        # Navigate to Twitter login page
+        page.goto("https://twitter.com/i/flow/login")
 
-    # Use webdriver_manager to install the correct version of ChromeDriver
-    chromedriver_path = "/usr/bin/chromedriver"
+        # Log in to Twitter
+        page.fill("input[name=\"text\"]", TWITTER_USERNAME)
+        page.press("input[name=\"text\"]", "Enter")
+        time.sleep(2)
 
-    # Create the Service object
-    service = Service(chromedriver_path)
+        # Handle additional username input if required
+        try:
+            page.fill("input[name=\"text\"]", TWITTER_NAME)
+            page.press("input[name=\"text\"]", "Enter")
+            time.sleep(2)
+        except Exception:
+            print("No additional username input required")
 
-    # Initialize the WebDriver with the service and options
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-    return driver
+        # Enter the password
+        page.fill("input[name=\"password\"]", TWITTER_PASSWORD)
+        page.press("input[name=\"password\"]", "Enter")
+
+        # Wait for the home page to load
+        page.wait_for_url("**/home")
+        print("Login successful!")
+
+        # Extract trends
+        trends = []
+        trend_selectors = [
+            "xpath=/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[3]/div/div/div/div[2]",
+            "xpath=/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[4]/div/div/div/div[2]",
+            "xpath=/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[5]/div/div/div/div[2]",
+            "xpath=/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[6]/div/div/div/div[2]",
+        ]
+
+        for selector in trend_selectors:
+            try:
+                trend = page.locator(selector).text_content()
+                trends.append(trend)
+            except Exception as e:
+                print(f"Failed to fetch trend: {e}")
+
+        # Close the browser
+        browser.close()
+
+        return trends
 
 @app.route("/")
 def index():
@@ -69,69 +90,14 @@ def run_scraper():
         start_time = datetime.datetime.now()
         print(f"Script started at: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
-        # Initialize the WebDriver with the proxy configuration
-        driver = get_driver_with_proxy()
-        driver.get("https://twitter.com/i/flow/login")
-
-        # Log in to Twitter
-        username_field = WebDriverWait(driver, 30).until(
-            EC.presence_of_element_located((By.NAME, "text"))
-        )
-        username_field.send_keys(TWITTER_USERNAME)
-        username_field.send_keys(Keys.RETURN)
-
-        #############
-
-        # time.sleep(2)  # Reduced sleep time to save memory
-
-        # # Handle username field if it asks for additional input
-        # try:
-        #     username_field = WebDriverWait(driver, 30).until(
-        #         EC.presence_of_element_located((By.NAME, "text"))
-        #     )
-        #     username_field.send_keys(TWITTER_NAME)
-        #     username_field.send_keys(Keys.RETURN)
-        # except Exception as e:
-        #     print("No username input required")
-
-        ##############
-
-        # Enter the password
-        password_field = WebDriverWait(driver, 30).until(
-            EC.presence_of_element_located((By.NAME, "password"))
-        )
-        password_field.send_keys(TWITTER_PASSWORD)
-        password_field.send_keys(Keys.RETURN)
-
-        # Wait for the home page to load
-        WebDriverWait(driver, 20).until(
-            EC.url_contains('home')
-        )
-        print("Login successful!")
-
-        # Extract trends
-        trends = []
-        trend_xpath = [
-            '/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[3]/div/div/div/div[2]',
-            '/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[4]/div/div/div/div[2]',
-            '/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[5]/div/div/div/div[2]',
-            '/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[6]/div/div/div/div[2]'
-        ]
-
-        for xpath in trend_xpath:
-            trend = WebDriverWait(driver, 20).until(
-                EC.presence_of_element_located((By.XPATH, xpath))
-            ).text
-            trends.append(trend)
-
-        # Log the trends
+        # Scrape Twitter trends
+        trends = scrape_twitter()
         print(f"Trends: {trends}")
 
         # Retrieve IP address used via ScraperAPI
         ip_address = "Unknown"
         try:
             response = requests.get(proxy_url)
-            # Log the raw response content for debugging
             print("ScraperAPI Response Content:", response.text)
 
             if response.status_code == 200:
@@ -157,8 +123,6 @@ def run_scraper():
 
         collection.insert_one(document)
         print("Data saved to MongoDB:", document)
-
-        driver.quit()
 
         # Fetch the latest entry from the database
         latest_entry = collection.find_one(sort=[("_id", -1)])
