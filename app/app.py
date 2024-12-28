@@ -11,7 +11,6 @@ from selenium.webdriver.chrome.options import Options
 from dotenv import load_dotenv
 import os
 
-# Load environment variables from .env file
 load_dotenv()
 
 app = Flask(__name__)
@@ -23,12 +22,10 @@ TWITTER_USERNAME = os.getenv("TWITTER_USERNAME")
 TWITTER_PASSWORD = os.getenv("TWITTER_PASSWORD")
 TWITTER_NAME = os.getenv("TWITTER_NAME")
 
-# MongoDB connection
 client = MongoClient(MONGO_URI)
 db = client["twitter_trends"]
 collection = db["trend_data"]
 
-# ScraperAPI configuration
 proxy_url = f'https://api.scraperapi.com?api_key={SCRAPERAPI_KEY}&url=https://httpbin.org/ip'
 
 # Configure Selenium with a ScraperAPI proxy
@@ -52,6 +49,8 @@ def run_scraper():
         driver = get_driver_with_proxy()
         driver.maximize_window()
         driver.get("https://twitter.com/i/flow/login")
+
+
 
         # Log in
         username_field = WebDriverWait(driver, 20).until(
@@ -77,6 +76,9 @@ def run_scraper():
         )
         print("Login successful!")
 
+
+
+
         # Extract trends
         trends = []
         for i in range(1, 6):
@@ -89,12 +91,13 @@ def run_scraper():
 
         print("Trends:", trends)
 
+
+
         # Retrieve IP address used via ScraperAPI
         response = requests.get(proxy_url)
         ip_address = response.json().get('origin', 'Unknown') if response.status_code == 200 else "Unknown"
         print("IP address used by ScraperAPI:", ip_address)
 
-        # Capture end time
         end_time = datetime.datetime.now()
         print(f"Script ended at: {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
@@ -113,6 +116,8 @@ def run_scraper():
         print("Data saved to MongoDB:", document)
 
         driver.quit()
+
+
 
         # Fetch the latest entry from the database
         latest_entry = collection.find_one(sort=[("_id", -1)])
