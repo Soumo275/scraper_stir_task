@@ -31,8 +31,11 @@ proxy_url = f'https://api.scraperapi.com?api_key={SCRAPERAPI_KEY}&url=https://ht
 def scrape_twitter():
     try:
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            context = browser.new_context()
+            # Launch the browser with full-screen settings
+            browser = p.chromium.launch(headless=True, args=["--start-maximized"])
+            context = browser.new_context(
+                viewport=None  # This sets the browser to fullscreen mode
+            )
             page = context.new_page()
 
             # Navigate to Twitter login page
