@@ -29,55 +29,57 @@ proxy_url = f'https://api.scraperapi.com?api_key={SCRAPERAPI_KEY}&url=https://ht
 
 # Function to scrape Twitter trends using Playwright
 def scrape_twitter():
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
-        page = context.new_page()
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            context = browser.new_context()
+            page = context.new_page()
 
-        # Navigate to Twitter login page
-        page.goto("https://twitter.com/i/flow/login")
+            # Navigate to Twitter login page
+            print("Navigating to Twitter login page...")
+            page.goto("https://twitter.com/i/flow/login", timeout=60000)
 
-        # Log in to Twitter
-        page.fill("input[name=\"text\"]", TWITTER_USERNAME)
-        page.press("input[name=\"text\"]", "Enter")
-        time.sleep(2)
-
-        # Handle additional username input if required
-        try:
-            page.fill("input[name=\"text\"]", TWITTER_NAME)
+            # Log in to Twitter
+            print("Entering username...")
+            page.fill("input[name=\"text\"]", TWITTER_USERNAME)
             page.press("input[name=\"text\"]", "Enter")
             time.sleep(2)
-        except Exception:
-            print("No additional username input required")
 
-        # Enter the password
-        page.fill("input[name=\"password\"]", TWITTER_PASSWORD)
-        page.press("input[name=\"password\"]", "Enter")
-
-        # Wait for the home page to load
-        page.wait_for_url("**/home")
-        print("Login successful!")
-
-        # Extract trends
-        trends = []
-        trend_selectors = [
-            "xpath=/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[3]/div/div/div/div[2]",
-            "xpath=/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[4]/div/div/div/div[2]",
-            "xpath=/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[5]/div/div/div/div[2]",
-            "xpath=/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[6]/div/div/div/div[2]",
-        ]
-
-        for selector in trend_selectors:
+            # Handle additional username input if required
             try:
-                trend = page.locator(selector).text_content()
-                trends.append(trend)
+                page.fill("input[name=\"text\"]", TWITTER_NAME)
+                page.press("input[name=\"text\"]", "Enter")
+                time.sleep(2)
+                print("Additional username input handled.")
+            except Exception:
+                print("No additional username input required.")
+
+            print("Entering password...")
+            page.fill("input[name=\"password\"]", TWITTER_PASSWORD)
+            page.press("input[name=\"password\"]", "Enter")
+
+            # Wait for the home page to load
+            print("Waiting for home page to load...")
+            page.wait_for_url("**/home", timeout=60000)
+            print("Login successful!")
+
+            # Extract trends dynamically
+            print("Extracting trends...")
+            trends = []
+            try:
+                trend_elements = page.locator('xpath=//section[contains(@aria-label, "Trending") or contains(@aria-label, "Trends")]//span').all_text_contents()
+                trends = [trend.strip() for trend in trend_elements if trend.strip()]
+                print(f"Extracted trends: {trends}")
             except Exception as e:
-                print(f"Failed to fetch trend: {e}")
+                print(f"Error extracting trends: {e}")
 
-        # Close the browser
-        browser.close()
+            # Close the browser
+            browser.close()
+            return trends
 
-        return trends
+    except Exception as e:
+        print(f"Error during scraping: {e}")
+        return []
 
 @app.route("/")
 def index():
@@ -97,7 +99,7 @@ def run_scraper():
         # Retrieve IP address used via ScraperAPI
         ip_address = "Unknown"
         try:
-            response = requests.get(proxy_url)
+            response = requests.get(proxy_url, timeout=10)
             print("ScraperAPI Response Content:", response.text)
 
             if response.status_code == 200:
