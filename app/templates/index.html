@@ -7,7 +7,6 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            line-height: 1.6;
             margin: 20px;
             background-color: #f9f9f9;
         }
@@ -17,12 +16,11 @@
         button {
             padding: 10px 20px;
             font-size: 16px;
-            color: #fff;
             background-color: #007bff;
+            color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            margin-top: 10px;
         }
         button:hover {
             background-color: #0056b3;
@@ -40,79 +38,52 @@
         }
         li {
             margin-bottom: 5px;
+            padding: 10px;
             background: #f1f1f1;
-            padding: 10px;
             border-radius: 5px;
-        }
-        pre {
-            background-color: #f4f4f4;
-            padding: 10px;
-            border-radius: 5px;
-            overflow-x: auto;
-        }
-        p {
-            font-size: 16px;
         }
         .error {
             color: red;
-        }
-        .loading {
-            font-size: 16px;
-            color: #666;
         }
     </style>
 </head>
 <body>
     <h1>Twitter Trending Topics</h1>
-    <button id="run-script">Click here to fetch Twitter trends</button>
+    <button id="run-script">Click here to run the script.</button>
     <div id="results"></div>
-
     <script>
         const resultsDiv = document.getElementById("results");
         const runScriptButton = document.getElementById("run-script");
 
         runScriptButton.addEventListener("click", async () => {
-            resultsDiv.innerHTML = "<p class='loading'>Fetching data...</p>"; // Loading message
+            resultsDiv.innerHTML = "<p>Fetching data...</p>";
             try {
                 const response = await fetch("/run-scraper");
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(`HTTP error! status: ${response.status} - ${errorData.error || "Unknown error"}`);
-                }
+                if (!response.ok) throw new Error("Failed to fetch data from server.");
 
                 const data = await response.json();
-
-                if (data.error) { // Backend error handling
-                    resultsDiv.innerHTML = `<p class="error">Error: ${data.error}</p>`;
-                    return;
-                }
-
-                // Generate HTML for results dynamically
-                let resultsHTML = `
-                    <p><strong>Unique ID:</strong> ${data.unique_id}</p>
-                    <p><strong>Trending Topics as of:</strong> ${data.start_time}</p>
+                const date = new Date(data.end_time);
+                resultsDiv.innerHTML = `
+                    <p>These are the most happening topics as of ${date.toLocaleString()}</p>
                     <ul>
-                `;
-
-                if (data.trends && data.trends.length > 0) {
-                    data.trends.forEach((trend, index) => {
-                        resultsHTML += `<li><strong>Trend ${index + 1}:</strong> ${trend}</li>`;
-                    });
-                } else {
-                    resultsHTML += `<li>No trends available.</li>`;
-                }
-
-                resultsHTML += `
+                        <li>${data.trend1}</li>
+                        <li>${data.trend2}</li>
+                        <li>${data.trend3}</li>
+                        <li>${data.trend4}</li>
+                        <li>${data.trend5}</li>
                     </ul>
-                    <p><strong>IP address used for this query:</strong> ${data.ip_address}</p>
+                    <p>The IP address used for this query was ${data.ip_address}.</p>
+                    <p>Here’s a JSON extract of this record from the MongoDB:</p>
                     <pre>${JSON.stringify(data, null, 2)}</pre>
+                    <button id="run-again">Click here to run the query again.</button>
                 `;
-
-                resultsDiv.innerHTML = resultsHTML;
-
+                const runAgainButton = document.getElementById("run-again");
+                runAgainButton.addEventListener("click", () => {
+                    resultsDiv.innerHTML = '';
+                    runScriptButton.click();
+                });
             } catch (error) {
                 resultsDiv.innerHTML = `<p class="error">Error: ${error.message}</p>`;
-                console.error("Error fetching data:", error);
             }
         });
     </script>

@@ -1,11 +1,15 @@
 from flask import Flask, jsonify, render_template
 from pymongo import MongoClient
 import datetime
-import os
-import time
-from dotenv import load_dotenv
-from playwright.sync_api import sync_playwright
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 import requests
+from selenium.webdriver.chrome.options import Options
+from dotenv import load_dotenv
+import os
 
 # Load environment variables from .env file
 load_dotenv()
@@ -27,110 +31,16 @@ collection = db["trend_data"]
 # ScraperAPI configuration
 proxy_url = f'https://api.scraperapi.com?api_key={SCRAPERAPI_KEY}&url=https://httpbin.org/ip'
 
-# Function to scrape Twitter trends using Playwright
-def scrape_twitter():
-    try:
-        with sync_playwright() as p:
-            # Launch the browser with full-screen settings
-            browser = p.chromium.launch(headless=True, args=["--start-maximized"])
-            context = browser.new_context(
-                viewport=None  # Sets the browser to fullscreen mode
-            )
-            page = context.new_page()
-
-            # Navigate to Twitter login page
-            print("Navigating to Twitter login page...")
-            page.goto("https://twitter.com/i/flow/login", timeout=90000)
-
-            # Log in to Twitter
-            print("Entering username...")
-            page.fill("input[name=\"text\"]", TWITTER_USERNAME)
-            page.press("input[name=\"text\"]", "Enter")
-            time.sleep(2)
-
-            # Handle additional username input if required
-            try:
-                page.fill("input[name=\"text\"]", TWITTER_NAME)
-                page.press("input[name=\"text\"]", "Enter")
-                time.sleep(2)
-                print("Additional username input handled.")
-            except Exception:
-                print("No additional username input required.")
-
-            print("Entering password...")
-            page.fill("input[name=\"password\"]", TWITTER_PASSWORD)
-            page.press("input[name=\"password\"]", "Enter")
-
-            try:
-                page.fill("input[name=\"text\"]", TWITTER_USERNAME)
-                page.press("input[name=\"text\"]", "Enter")
-                time.sleep(2)
-                print("Additional email input handled.")
-            except Exception:
-                print("No additional email input required.")
-
-            print("Login successful!")
-
-            # Wait for the home page to load
-            print("Waiting for home page to load...")
-            try:
-                max_wait_time = 120  # Total time to wait in seconds
-                polling_interval = 1  # Interval between checks in seconds
-                elapsed_time = 0
-
-                while '/home' not in page.url:
-                    if elapsed_time >= max_wait_time:
-                        raise TimeoutError("Timeout exceeded while waiting for the URL to contain '/home'.")
-                    time.sleep(polling_interval)
-                    elapsed_time += polling_interval
-
-                print("Home page loaded successfully!")
-            except Exception as e:
-                print(f"Error during waiting for URL to contain '/home': {e}")
-
-            print("Extracting individual trends...")
-            trends = {}
-            try:
-                trends["trend1"] = page.locator(
-                    'xpath=/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[3]/div/div/div/div[2]'
-                ).inner_text()
-            except Exception:
-                trends["trend1"] = "Error fetching trend1"
-            
-            try:
-                trends["trend2"] = page.locator(
-                    'xpath=/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[4]/div/div/div/div[2]'
-                ).inner_text()
-            except Exception:
-                trends["trend2"] = "Error fetching trend2"
-            
-            try:
-                trends["trend3"] = page.locator(
-                    'xpath=/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[5]/div/div/div/div[2]'
-                ).inner_text()
-            except Exception:
-                trends["trend3"] = "Error fetching trend3"
-            
-            try:
-                trends["trend4"] = page.locator(
-                    'xpath=/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[6]/div/div/div/div[2]'
-                ).inner_text()
-            except Exception:
-                trends["trend4"] = "Error fetching trend4"
-            
-            print(f"Extracted trends: {trends}")
-
-            # Close the browser
-            browser.close()
-            return trends
-
-    except Exception as e:
-        print(f"Error during scraping: {e}")
-        return []
+# Configure Selenium with a ScraperAPI proxy
+def get_driver_with_proxy():
+    chrome_options = Options()
+    chrome_options.add_argument(f'--proxy-server={proxy_url}')  # ScraperAPI as the proxy server
+    driver = webdriver.Chrome(options=chrome_options)
+    return driver
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("index.html") 
 
 @app.route("/run-scraper", methods=["GET"])
 def run_scraper():
@@ -138,24 +48,50 @@ def run_scraper():
         # Capture start time
         start_time = datetime.datetime.now()
         print(f"Script started at: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+        
+        driver = get_driver_with_proxy()
+        driver.maximize_window()
+        driver.get("https://twitter.com/i/flow/login")
 
-        # Scrape Twitter trends
-        trends = scrape_twitter()
-        print(f"Trends: {trends}")
+        # Log in
+        username_field = WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.NAME, "text"))
+        )
+        username_field.send_keys(TWITTER_USERNAME)
+        username_field.send_keys(Keys.RETURN)
+
+        extra_field = WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.NAME, "text"))
+        )
+        extra_field.send_keys(TWITTER_NAME)
+        extra_field.send_keys(Keys.RETURN)
+
+        password_field = WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.NAME, "password"))
+        )
+        password_field.send_keys(TWITTER_PASSWORD)
+        password_field.send_keys(Keys.RETURN)
+
+        WebDriverWait(driver, 20).until(
+            EC.url_contains('home')
+        )
+        print("Login successful!")
+
+        # Extract trends
+        trends = []
+        for i in range(1, 5):
+            trend = WebDriverWait(driver, 20).until(
+                EC.presence_of_element_located(
+                    (By.XPATH, f'/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[{i + 2}]/div/div/div/div[2]')
+                )
+            ).text
+            trends.append(trend)
+
+        print("Trends:", trends)
 
         # Retrieve IP address used via ScraperAPI
-        ip_address = "Unknown"
-        try:
-            response = requests.get(proxy_url, timeout=10)
-            print("ScraperAPI Response Content:", response.text)
-
-            if response.status_code == 200:
-                ip_address = response.json().get('origin', 'Unknown')
-            else:
-                ip_address = "Error: Failed to retrieve IP"
-        except Exception as e:
-            print(f"Error occurred while fetching IP address from ScraperAPI: {str(e)}")
-
+        response = requests.get(proxy_url)
+        ip_address = response.json().get('origin', 'Unknown') if response.status_code == 200 else "Unknown"
         print("IP address used by ScraperAPI:", ip_address)
 
         # Capture end time
@@ -164,14 +100,18 @@ def run_scraper():
 
         # Save data to MongoDB
         document = {
-            "trends": trends,
+            "trend1": trends[0],
+            "trend2": trends[1],
+            "trend3": trends[2],
+            "trend4": trends[3],
             "start_time": start_time.strftime('%Y-%m-%d %H:%M:%S'),
             "end_time": end_time.strftime('%Y-%m-%d %H:%M:%S'),
             "ip_address": ip_address
         }
-
         collection.insert_one(document)
         print("Data saved to MongoDB:", document)
+
+        driver.quit()
 
         # Fetch the latest entry from the database
         latest_entry = collection.find_one(sort=[("_id", -1)])
@@ -180,19 +120,18 @@ def run_scraper():
 
         response_data = {
             "unique_id": str(latest_entry.get("_id", "N/A")),
-            "trends": latest_entry.get("trends", "N/A"),
+            "trend1": latest_entry.get("trend1", "N/A"),
+            "trend2": latest_entry.get("trend2", "N/A"),
+            "trend3": latest_entry.get("trend3", "N/A"),
+            "trend4": latest_entry.get("trend4", "N/A"),
             "start_time": latest_entry.get("start_time", "N/A"),
             "end_time": latest_entry.get("end_time", "N/A"),
             "ip_address": latest_entry.get("ip_address", "N/A"),
         }
-
-        print(f"Latest MongoDB Entry: {response_data}")
-
         return jsonify(response_data)
-
     except Exception as e:
         print(f"Error occurred: {str(e)}")
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(debug=True)
