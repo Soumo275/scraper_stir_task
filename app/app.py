@@ -34,13 +34,13 @@ def scrape_twitter():
             # Launch the browser with full-screen settings
             browser = p.chromium.launch(headless=True, args=["--start-maximized"])
             context = browser.new_context(
-                viewport=None  # This sets the browser to fullscreen mode
+                viewport=None  # Sets the browser to fullscreen mode
             )
             page = context.new_page()
 
             # Navigate to Twitter login page
             print("Navigating to Twitter login page...")
-            page.goto("https://twitter.com/i/flow/login", timeout=60000)
+            page.goto("https://twitter.com/i/flow/login", timeout=90000)
 
             # Log in to Twitter
             print("Entering username...")
@@ -60,11 +60,18 @@ def scrape_twitter():
             print("Entering password...")
             page.fill("input[name=\"password\"]", TWITTER_PASSWORD)
             page.press("input[name=\"password\"]", "Enter")
+            print("Login successful!")
 
             # Wait for the home page to load
             print("Waiting for home page to load...")
-            page.wait_for_url("**/home", timeout=60000)
-            print("Login successful!")
+            page.wait_for_selector('xpath=//a[contains(@href, "/home")]', timeout=60000)
+            print("Home page loaded successfully!")
+
+            # Debug: Capture screenshot and HTML
+            page.screenshot(path="debug_screenshot.png")
+            html_content = page.content()
+            with open("debug_page.html", "w") as file:
+                file.write(html_content)
 
             # Extract trends dynamically
             print("Extracting trends...")
