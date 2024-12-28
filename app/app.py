@@ -73,8 +73,14 @@ def scrape_twitter():
 
             # Wait for the home page to load
             print("Waiting for home page to load...")
-            page.wait_for_selector('xpath=//a[contains(@href, "/home")]', timeout=60000)
-            print("Home page loaded successfully!")
+            try:
+                page.wait_for_selector('xpath=//a[contains(@href, "/home")]', timeout=120000)
+                print("Home page loaded successfully!")
+            except Exception as e:
+                print(f"Error during waiting for selector: {e}")
+                with open("debug_page.html", "w") as file:
+                    file.write(page.content())
+                raise
 
             # Debug: Capture screenshot and HTML
             page.screenshot(path="debug_screenshot.png")
@@ -82,15 +88,37 @@ def scrape_twitter():
             with open("debug_page.html", "w") as file:
                 file.write(html_content)
 
-            # Extract trends dynamically
-            print("Extracting trends...")
-            trends = []
+            print("Extracting individual trends...")
+            trends = {}
             try:
-                trend_elements = page.locator('xpath=//section[contains(@aria-label, "Trending") or contains(@aria-label, "Trends")]//span').all_text_contents()
-                trends = [trend.strip() for trend in trend_elements if trend.strip()]
-                print(f"Extracted trends: {trends}")
-            except Exception as e:
-                print(f"Error extracting trends: {e}")
+                trends["trend1"] = page.locator(
+                    'xpath=/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[3]/div/div/div/div[2]'
+                ).inner_text()
+            except Exception:
+                trends["trend1"] = "Error fetching trend1"
+            
+            try:
+                trends["trend2"] = page.locator(
+                    'xpath=/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[4]/div/div/div/div[2]'
+                ).inner_text()
+            except Exception:
+                trends["trend2"] = "Error fetching trend2"
+            
+            try:
+                trends["trend3"] = page.locator(
+                    'xpath=/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[5]/div/div/div/div[2]'
+                ).inner_text()
+            except Exception:
+                trends["trend3"] = "Error fetching trend3"
+            
+            try:
+                trends["trend4"] = page.locator(
+                    'xpath=/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[4]/section/div/div/div[6]/div/div/div/div[2]'
+                ).inner_text()
+            except Exception:
+                trends["trend4"] = "Error fetching trend4"
+            
+            print(f"Extracted trends: {trends}")
 
             # Close the browser
             browser.close()
